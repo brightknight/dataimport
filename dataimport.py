@@ -63,7 +63,6 @@ class dataimport:
             `name` text COLLATE utf8_unicode_ci NOT NULL,
             `begindate` date NOT NULL,
             `enddate` date NOT NULL,
-            `worktype` tinyint(4) NOT NULL,
             `project` text COLLATE utf8_unicode_ci NOT NULL,
             `tasktype` text COLLATE utf8_unicode_ci NOT NULL,
             `plantype` tinyint(4) NOT NULL,
@@ -71,18 +70,17 @@ class dataimport:
             `content` text COLLATE utf8_unicode_ci NOT NULL,
             `status` int(11) NOT NULL,
             `hours` int(11) NOT NULL,
-            `diary` text COLLATE utf8_unicode_ci NOT NULL,
-            `comment` text COLLATE utf8_unicode_ci NOT NULL,
             PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;'''
     # insert
     __statement_insert = '''INSERT INTO `workitems_import`(
-        `name`,`begindate`, `enddate`, `worktype`, `project`, `tasktype`, 
+        `name`,`begindate`, `enddate`, `project`, `tasktype`, 
         `plantype`, `taskname`, `content`, 
-        `status`, `hours`, `diary`, `comment`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+        `status`, `hours`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
     
     # clear all (reset ?)
-    __statement_clearall = 'truncate table `workitems_import`'
+    # __statement_clearall = 'truncate table `workitems_import`'
+    __statement_clearall = 'drop table if exists `workitems_import`'
     
     # select by name
     __statement_select_by_name = 'select max(begindate) from workitems_import where 1=1 or name like %s'
@@ -143,21 +141,25 @@ class dataimport:
             for i in range(row_start, table.nrows):
                 values = table.row_values(i)
         
-                # ignore the columns more than 13
-                while (len(values) >= 14) :
-                    values.pop(13)
+                # ignore the columns more than 12
+                while (len(values) >= 12) :
+                    values.pop(11)
         
                 # begin date
                 values[1] = format_field.format_datetime(values[1])
                 # end date
                 values[2] = format_field.format_datetime(values[2])
                 # worktype: 1个人工作 or 2项目进展,0-unknown
-                values[3] = format_field.format_worktype(values[3])
+                if (values[3] != '个人工作'):
+                    continue
                 # plan type
                 values[6] = format_field.format_plantype(values[6])
                 # status
                 values[9] = format_field.format_status(values[9])
         
+                # ignore and remove values[3]
+                del values[3]
+
                 # insert
                 cur.execute(self.__statement_insert, values)
                 n += 1
@@ -172,6 +174,8 @@ class dataimport:
     def clearall(self):
         cur = self.__conn.cursor()
         cur.execute(self.__statement_clearall);
+        self.__conn.commit()
+        cur.execute(self.__statement_createtables);
         self.__conn.commit()
         cur.close()
        

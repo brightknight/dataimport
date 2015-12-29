@@ -13,8 +13,10 @@ path = '/home/hehj/workspace/worktasks_import/data/'
 
 di = dataimport.dataimport()
 # database server, changed here...
-di.init(host='localhost',user='root',passwd='root')
-di.clearall()
+di.init(host='172.16.42.200',user='root',passwd='root')
+
+# clear all data
+# di.clearall()
 
 files = listfiles.find_path(path)
 total = len(files)
